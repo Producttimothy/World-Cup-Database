@@ -10,14 +10,4 @@ fi
 
 # TRUNCATE TABLE command deletes the data inside a table, but not the table itself
 
-echo $($PSQL "TRUNCATE teams, games")
-
-echo $($PSQL "UPDATE help SET winner='Costa_Rica' WHERE winner='Costa Rica'")
-# echo $($PSQL "SELECT winner FROM help UNION SELECT opponent FROM help AS new_name ORDER BY winner")
-
-echo $($PSQL "UNION winner, opponent INTO new5 FROM help GROUP BY winner")
-
-
-
-INSERT INTO table_name (column1, column2, column3, ...)
-VALUES (value1, value2, value3, ...);
+echo $($PSQL "TRUNCATE help, teams, games")

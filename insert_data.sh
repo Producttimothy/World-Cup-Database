@@ -10,48 +10,43 @@ fi
 # Do not change code above this line. Use the PSQL variable above to query your database.
 
 # TRUNCATE TABLE command deletes the data inside a table, but not the table itself
-echo $($PSQL "TRUNCATE help, teams, games")
+echo $($PSQL "TRUNCATE TABLE help, teams, games")
 
 # get data from csv (name for help name): 
 cat games.csv | while IFS="," read YEAR ROUND WINNER OPPONENT WINNER_GOALS OPPONENT_GOALS
 do 
   # insert data
-  INSERT_HELP_RESULT=$($PSQL "INSERT INTO help(year, round, winner, opponent, winner_goals, opponent_goals) VALUES('$YEAR', '$ROUND', '$WINNER', '$OPPONENT', '$WINNER_GOALS', '$OPPONENT_GOALS')")
-  if [[ $INSERT_HELP_RESULT == "INSERT 0 1" ]]
+  TEAM_DATA=$($PSQL "SELECT name FROM teams WHERE='$WINNER'")
+  if [[ $WINNER != 'winner' ]]
   then
-      echo Inserted into help, $YEAR, $ROUND, $WINNER, $OPPONENT, $WINNER_GOALS, $OPPONENT_GOALS
+    if [[ -z $TEAM_DATA ]]
+    then
+    INSERT_DATA=$($PSQL "INSERT INTO teams(name) VALUES('$WINNER')")
+      if [[ INSERT_DATA == "INSERT 0 1" ]]
+      then 
+      echo Insertet data!
+      fi
+    fi
   fi
-done
 
-# rename cost_rica # US bc otherwise split at " " --> fix later!!!
-echo $($PSQL "UPDATE help SET winner='Costa_Rica' WHERE winner='Costa Rica'")
-echo $($PSQL "UPDATE help SET opponent='Costa_Rica' WHERE opponent='Costa Rica'")
-echo $($PSQL "UPDATE help SET opponent='United_States' WHERE opponent ='United States'")
-
-
-#UNION winner and opponent and keep unique (UNION drops duplicate entries during the merge. UNION ALL keeps duplicate entries.)
-
-TEAM=$($PSQL "SELECT winner FROM help UNION SELECT opponent FROM help as name ORDER BY winner")
-for name in $TEAM
-do
-  INSERT_TEAM_NAME=$($PSQL "INSERT INTO teams(name) VALUES('$name')")
-  if [[ $INSERT_TEAM_NAME == "INSERT 0 1" ]]
+  TEAM_OPPO=$($PSQL "SELECT name FROM teams WHERE='$OPPONENT'")
+  if [[ $OPPONENT != 'opponent' ]]
   then
-      echo Inserted into teams, $name
+    if [[ -z $TEAM_OPPO ]]
+    then
+    INSERT_DATA_OPPO=$($PSQL "INSERT INTO teams(name) VALUES('$OPPONENT')")
+    fi
   fi
-done
 
-# rename cost_rica # US back
-echo $($PSQL "UPDATE teams SET name='Costa Rica' WHERE name='Costa_Rica'")
-echo $($PSQL "UPDATE teams SET name='United States' WHERE name='United_States'")
+  TEAM_ID_WINNER=$($PSQL "SELECT team_id FROM teams WHERE name='$WINNER'")
+  TEAM_ID_OPPONENT=$($PSQL "SELECT team_id FROM teams WHERE name='$OPPONENT'")
 
-# insert data into games
-INSERT_GAME=$($PSQL "INSERT INTO games(year, round, winner_goals, opponent_goals) VALUES('$YEAR', '$ROUND', '$WINNER_GOALS', '$OPPONENT_GOALS')")
-
-# get data from csv (name for help name): 
-cat games.csv | while IFS="," read YEAR ROUND WINNER OPPONENT WINNER_GOALS OPPONENT_GOALS
-do 
-# insert data
-  INSERT_GAME=$($PSQL "INSERT INTO games(year, round, winner_goals, opponent_goals) VALUES('$YEAR', '$ROUND', '$WINNER_GOALS', '$OPPONENT_GOALS')")
+  if [[ -n $TEAM_ID_WINNER || -n $TEAM_ID_OPPONENT ]]
+  then 
+    if [[ $YEAR != "year" ]]
+    then 
+      INSERT_GAME_DATA=$($PSQL "INSERT INTO games(year, round, winner_id, opponent_id, winner_goals, opponent_goals) VALUES('$YEAR', '$ROUND', '$TEAM_ID_WINNER', '$TEAM_ID_OPPONENT', '$WINNER_GOALS', '$OPPONENT_GOALS')")
+    fi
+  fi
 
 done
